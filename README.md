@@ -45,12 +45,6 @@ python main.py
 - Real-time gameplay and training visualization  
 - Optional graphs to visualize the training progress
 
-## 📸 Team
-
-![Team](team_photo.png)
-
-> *(Replace `team_photo.png` with your actual team image or remove this section if solo.)*
-
 ## 📎 Links
 
 - GitHub: https://github.com/YOUR_USERNAME/ai-pong-neat  
