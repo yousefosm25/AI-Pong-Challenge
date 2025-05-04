@@ -48,7 +48,7 @@ cd AI Pong Challenge
 
 ## 📎 Links
 
-- GitHub: https://github.com/YOUR_USERNAME/ai-pong-neat  
+- GitHub: https://github.com/yousefosm25/AI-Pong-Challenge  
 - YouTube Demo: https://youtu.be/YOUR_VIDEO_ID
 
 ---
