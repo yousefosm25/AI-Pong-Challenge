@@ -26,14 +26,15 @@ A classic Pong game where the paddles are controlled by AI agents trained using 
 ## 📁 How to Run
 
 ### 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/ai-pong-neat.git
-cd ai-pong-neat
-
+```
+git clone https://github.com/yousefosm25/AI-Pong-Challenge
+cd AI Pong Challenge
+```
 ### 2. Install dependencies
-pip install -r requirements.txt
+```pip install -r requirements.txt```
 
 ### 3. Run the game
-python main.py
+```python main.py```
 
 > Make sure `config-feedforward.txt` is in the same directory as `main.py`.
 
