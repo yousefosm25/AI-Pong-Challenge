@@ -14,8 +14,10 @@ pygame.init()
 WIDTH, HEIGHT = 800, 600
 PADDLE_WIDTH, PADDLE_HEIGHT = 15, 100
 BALL_SIZE = 15
-PADDLE_SPEED = 7
-BALL_SPEED = 5
+PADDLE_SPEED = 8  # Reduced from 10
+BALL_SPEED = 6  # Reduced from 8
+MAX_BALL_SPEED = 10  # Reduced from 15
+SPEED_INCREASE = 0.05  # Reduced from 0.1
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (100, 100, 100)
@@ -60,17 +62,17 @@ class Particle:
         self.x = x
         self.y = y
         self.color = color
-        self.size = random.randint(2, 5)
-        self.speed = random.uniform(1, 3)
+        self.size = random.randint(2, 4)  # Reduced from 2-5
+        self.speed = random.uniform(0.5, 2)  # Reduced from 1-3
         self.angle = random.uniform(0, 2 * math.pi)
         self.life = 1.0
-        self.decay = random.uniform(0.02, 0.05)
+        self.decay = random.uniform(0.05, 0.1)  # Increased decay rate
 
     def update(self):
         self.x += math.cos(self.angle) * self.speed
         self.y += math.sin(self.angle) * self.speed
         self.life -= self.decay
-        self.size = max(0, self.size - 0.1)
+        self.size = max(0, self.size - 0.2)  # Increased size reduction
 
     def draw(self, surface):
         if self.life <= 0:
@@ -97,7 +99,7 @@ class Particle:
 # Particle system
 particles = []
 
-def add_particles(x, y, color, count=10):
+def add_particles(x, y, color, count=5):  # Reduced default count from 10
     for _ in range(count):
         particles.append(Particle(x, y, color))
 
@@ -110,33 +112,59 @@ class Paddle:
         self.glow_radius = 0
         self.glow_direction = 1
         self.hit_animation = 0
+        self.target_y = y  # Add target position for smooth movement
+        self.speed = PADDLE_SPEED  # Add speed property
+        self.last_prediction = y  # Add last prediction for smoothing
+        self.prediction_update_timer = 0  # Add timer for prediction updates
 
     def move(self, up=True):
         if up and self.rect.top > 0:
-            self.rect.y -= PADDLE_SPEED
+            self.rect.y -= self.speed
         elif not up and self.rect.bottom < HEIGHT:
-            self.rect.y += PADDLE_SPEED
+            self.rect.y += self.speed
+
+    def move_to_target(self):
+        # Smoothly move towards target position with easing
+        if abs(self.rect.centery - self.target_y) > 2:
+            # Calculate distance to target
+            distance = self.target_y - self.rect.centery
+            # Apply easing for smoother movement
+            move_amount = distance * 0.2  # Increased from 0.1 to 0.2 for smoother movement
+            
+            # Add minimum movement threshold to prevent micro-adjustments
+            if abs(move_amount) < 0.5:
+                move_amount = 0.5 if move_amount > 0 else -0.5
+                
+            # Move the paddle
+            self.rect.centery += move_amount
+            # Ensure paddle stays within bounds
+            self.rect.top = max(0, min(HEIGHT - PADDLE_HEIGHT, self.rect.top))
 
     def draw(self):
         # Draw glow effect
         if self.glow_radius > 0:
             glow_surface = pygame.Surface((PADDLE_WIDTH + self.glow_radius*2, PADDLE_HEIGHT + self.glow_radius*2), pygame.SRCALPHA)
-            pygame.draw.rect(glow_surface, (*self.color, 50), (0, 0, PADDLE_WIDTH + self.glow_radius*2, PADDLE_HEIGHT + self.glow_radius*2), border_radius=5)
+            pygame.draw.rect(glow_surface, (*self.color, 50), (0, 0, PADDLE_WIDTH + self.glow_radius*2, PADDLE_HEIGHT + self.glow_radius*2), border_radius=15)
             screen.blit(glow_surface, (self.rect.x - self.glow_radius, self.rect.y - self.glow_radius))
         
         # Draw paddle with rounded corners and gradient
+        paddle_surface = pygame.Surface((PADDLE_WIDTH, PADDLE_HEIGHT), pygame.SRCALPHA)
         for i in range(PADDLE_HEIGHT):
             alpha = int(255 * (1 - abs(i - PADDLE_HEIGHT/2) / (PADDLE_HEIGHT/2)))
             color = (*self.color, alpha)
-            pygame.draw.line(screen, color, 
-                           (self.rect.x, self.rect.y + i),
-                           (self.rect.x + PADDLE_WIDTH, self.rect.y + i))
+            pygame.draw.line(paddle_surface, color, 
+                           (0, i),
+                           (PADDLE_WIDTH, i))
+        
+        # Draw the rounded rectangle
+        pygame.draw.rect(paddle_surface, self.color, (0, 0, PADDLE_WIDTH, PADDLE_HEIGHT), border_radius=15)
+        screen.blit(paddle_surface, self.rect)
         
         # Hit animation
         if self.hit_animation > 0:
             hit_surface = pygame.Surface((PADDLE_WIDTH + 20, PADDLE_HEIGHT + 20), pygame.SRCALPHA)
             alpha = int(255 * (1 - self.hit_animation))
-            pygame.draw.rect(hit_surface, (*WHITE, alpha), (0, 0, PADDLE_WIDTH + 20, PADDLE_HEIGHT + 20), border_radius=10)
+            pygame.draw.rect(hit_surface, (*WHITE, alpha), (0, 0, PADDLE_WIDTH + 20, PADDLE_HEIGHT + 20), border_radius=20)
             screen.blit(hit_surface, (self.rect.x - 10, self.rect.y - 10))
             self.hit_animation -= 0.1
         
@@ -148,14 +176,14 @@ class Paddle:
 # Ball class
 class Ball:
     def __init__(self):
-        self.speed = BALL_SPEED  # Initialize speed before reset
+        self.speed = BALL_SPEED
         self.reset()
         self.trail = []
         self.hit_animation = 0
         self.last_collision = None
         self.subpixel_x = 0.0
         self.subpixel_y = 0.0
-        self.max_trail_length = 10
+        self.max_trail_length = 12  # Increased from 5
 
     def reset(self):
         self.rect = pygame.Rect(WIDTH // 2 - BALL_SIZE // 2, HEIGHT // 2 - BALL_SIZE // 2, BALL_SIZE, BALL_SIZE)
@@ -166,6 +194,7 @@ class Ball:
         self.trail = []
         self.hit_animation = 0
         self.last_collision = None
+        self.speed = BALL_SPEED  # Reset speed to initial value
 
     def move(self):
         # Update sub-pixel position
@@ -202,6 +231,9 @@ class Ball:
                 # Calculate bounce angle (max 45 degrees)
                 bounce_angle = relative_intersect_y * (math.pi / 4)
                 
+                # Increase speed on each hit
+                self.speed = min(MAX_BALL_SPEED, self.speed + SPEED_INCREASE)
+                
                 # Calculate new speed components
                 speed = math.sqrt(self.dx * self.dx + self.dy * self.dy)
                 self.dx = speed * math.cos(bounce_angle) * (-1 if self.dx > 0 else 1)
@@ -232,14 +264,13 @@ class Ball:
         return False
 
     def draw(self):
-        # Draw trail with smooth gradient
+        # Draw trail with all points (smoother and longer)
         for i, (x, y) in enumerate(self.trail):
-            alpha = int(255 * (i + 1) / len(self.trail))
+            alpha = int(180 * (i + 1) / len(self.trail))  # Increased alpha for more visible trail
             size = int(BALL_SIZE * (i + 1) / len(self.trail))
-            # Use gfxdraw for smoother circles
             pygame.gfxdraw.filled_circle(screen, int(x), int(y), size, (*WHITE, alpha))
         
-        # Draw ball with glow
+        # Draw ball with animated glow
         if self.hit_animation > 0:
             glow_surface = pygame.Surface((int(BALL_SIZE * 3), int(BALL_SIZE * 3)), pygame.SRCALPHA)
             alpha = int(255 * (1 - self.hit_animation))
@@ -251,10 +282,9 @@ class Ball:
             screen.blit(glow_surface, (self.rect.x - BALL_SIZE, self.rect.y - BALL_SIZE))
             self.hit_animation -= 0.1
         
-        # Draw ball with smooth gradient
+        # Draw ball with smooth gradient (layered circles)
         for i in range(BALL_SIZE):
             alpha = int(255 * (1 - i / BALL_SIZE))
-            # Use gfxdraw for smoother circles
             pygame.gfxdraw.filled_circle(screen, 
                                        self.rect.centerx, 
                                        self.rect.centery, 
@@ -373,8 +403,8 @@ class Background:
         self.gradient_offset = 0
         self.center_line_offset = 0
         self.particles = []
-        self.grid_size = 50
-        self.grid_opacity = 30
+        self.grid_size = 100  # Increased from 50 to reduce grid lines
+        self.grid_opacity = 20  # Reduced from 30
 
     def update(self):
         # Update gradient offset
@@ -394,39 +424,31 @@ class Background:
                 self.particles.remove(particle)
 
     def draw(self, surface):
-        # Draw gradient background
+        # Draw gradient background (restore to every line)
         for y in range(HEIGHT):
-            # Calculate gradient color
             color_index = int((y + self.gradient_offset) / HEIGHT * len(GRADIENT_COLORS)) % len(GRADIENT_COLORS)
             next_color_index = (color_index + 1) % len(GRADIENT_COLORS)
             progress = ((y + self.gradient_offset) / HEIGHT * len(GRADIENT_COLORS)) % 1
-
-            # Interpolate between colors
             r = int(GRADIENT_COLORS[color_index][0] * (1 - progress) + GRADIENT_COLORS[next_color_index][0] * progress)
             g = int(GRADIENT_COLORS[color_index][1] * (1 - progress) + GRADIENT_COLORS[next_color_index][1] * progress)
             b = int(GRADIENT_COLORS[color_index][2] * (1 - progress) + GRADIENT_COLORS[next_color_index][2] * progress)
-
             pygame.draw.line(surface, (r, g, b), (0, y), (WIDTH, y))
-
-        # Draw grid
+        # Draw subtle grid
         for x in range(0, WIDTH, self.grid_size):
             for y in range(0, HEIGHT, self.grid_size):
-                alpha = int(self.grid_opacity * (1 - abs(x - WIDTH/2) / (WIDTH/2)))
+                alpha = int(self.grid_opacity * 0.5 * (1 - abs(x - WIDTH/2) / (WIDTH/2)))  # More subtle
                 pygame.draw.line(surface, (*WHITE, alpha), (x, 0), (x, HEIGHT), 1)
                 pygame.draw.line(surface, (*WHITE, alpha), (0, y), (WIDTH, y), 1)
-
         # Draw animated center line
         y = self.center_line_offset
         while y < HEIGHT:
-            # Draw dash
             pygame.draw.line(surface, (*WHITE, 100), (WIDTH//2, y), (WIDTH//2, y + CENTER_LINE_DASH_LENGTH), 2)
             y += CENTER_LINE_DASH_LENGTH + CENTER_LINE_GAP
-
         # Draw particles
         for particle in self.particles:
             particle.draw(surface)
 
-    def add_particles(self, x, y, color, count=5):
+    def add_particles(self, x, y, color, count=3):  # Reduced from 5
         for _ in range(count):
             self.particles.append(Particle(x, y, color))
 
@@ -434,6 +456,8 @@ class Background:
 background = Background()
 
 def draw_game():
+    # Clear the screen first
+    screen.fill(BLACK)
     # Update and draw background
     background.update()
     background.draw(screen)
@@ -461,6 +485,8 @@ def draw_game():
         screen.blit(score_text, (x_pos, 20))
 
 def draw_menu():
+    # Clear the screen first
+    screen.fill(BLACK)
     # Update and draw background
     background.update()
     background.draw(screen)
@@ -482,6 +508,8 @@ def draw_menu():
     quit_button.draw()
 
 def draw_mode_select():
+    # Clear the screen first
+    screen.fill(BLACK)
     # Update and draw background
     background.update()
     background.draw(screen)
@@ -503,6 +531,8 @@ def draw_mode_select():
     back_button.draw()
 
 def draw_controls():
+    # Clear the screen first
+    screen.fill(BLACK)
     # Update and draw background
     background.update()
     background.draw(screen)
@@ -538,6 +568,8 @@ def draw_controls():
         screen.blit(control_text, control_rect)
 
 def draw_game_over():
+    # Clear the screen first
+    screen.fill(BLACK)
     # Update and draw background
     background.update()
     background.draw(screen)
@@ -650,10 +682,34 @@ while True:
             if keys[pygame.K_s]:
                 opponent.move(up=False)
         else:  # AI mode
-            if opponent.rect.centery < ball.rect.centery:
-                opponent.move(up=False)
-            elif opponent.rect.centery > ball.rect.centery:
-                opponent.move(up=True)
+            # Update prediction timer
+            opponent.prediction_update_timer += 1
+            
+            # Predict ball position
+            if ball.dx > 0:  # Only predict when ball is moving towards AI
+                # Only update prediction every 10 frames to reduce jitter
+                if opponent.prediction_update_timer >= 10:
+                    # Calculate time until ball reaches AI paddle
+                    time_to_reach = (opponent.rect.left - ball.rect.right) / ball.dx
+                    # Predict ball's y position
+                    predicted_y = ball.rect.centery + (ball.dy * time_to_reach)
+                    # Add some randomness to make it less perfect
+                    predicted_y += random.uniform(-20, 20)
+                    # Keep prediction within screen bounds
+                    predicted_y = max(PADDLE_HEIGHT/2, min(HEIGHT - PADDLE_HEIGHT/2, predicted_y))
+                    
+                    # Smooth the prediction by averaging with last prediction
+                    opponent.target_y = (predicted_y + opponent.last_prediction) / 2
+                    opponent.last_prediction = predicted_y
+                    opponent.prediction_update_timer = 0
+            else:
+                # When ball is moving away, smoothly return to center with less frequent updates
+                if abs(opponent.rect.centery - HEIGHT/2) > 5:  # Only update if significantly off center
+                    opponent.target_y = HEIGHT/2
+                    opponent.last_prediction = HEIGHT/2
+            
+            # Move AI paddle smoothly
+            opponent.move_to_target()
 
         # Move ball
         ball.move()
@@ -674,7 +730,7 @@ while True:
             ball.reset()
         
         # Check for win condition
-        if player.score >= 5 or opponent.score >= 5:
+        if player.score >= 10 or opponent.score >= 10:
             game_state = GAME_OVER
         
         draw_game()
@@ -684,4 +740,4 @@ while True:
         draw_game_over()
 
     pygame.display.flip()
-    clock.tick(60) 
+    clock.tick(60)  # Reduced to 60 FPS for better performance 
