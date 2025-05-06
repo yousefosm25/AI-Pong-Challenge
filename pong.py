@@ -267,8 +267,10 @@ class Ball:
         # Draw trail with all points (smoother and longer)
         for i, (x, y) in enumerate(self.trail):
             alpha = int(180 * (i + 1) / len(self.trail))  # Increased alpha for more visible trail
-            size = int(BALL_SIZE * (i + 1) / len(self.trail))
-            pygame.gfxdraw.filled_circle(screen, int(x), int(y), size, (*WHITE, alpha))
+            size = BALL_SIZE * (i + 1) / len(self.trail)  # Use float for smoother size
+            # Draw anti-aliased circle for smooth edge
+            pygame.gfxdraw.aacircle(screen, int(x), int(y), int(size), (*WHITE, alpha))
+            pygame.gfxdraw.filled_circle(screen, int(x), int(y), int(size), (*WHITE, alpha))
         
         # Draw ball with animated glow
         if self.hit_animation > 0:
@@ -433,17 +435,7 @@ class Background:
             g = int(GRADIENT_COLORS[color_index][1] * (1 - progress) + GRADIENT_COLORS[next_color_index][1] * progress)
             b = int(GRADIENT_COLORS[color_index][2] * (1 - progress) + GRADIENT_COLORS[next_color_index][2] * progress)
             pygame.draw.line(surface, (r, g, b), (0, y), (WIDTH, y))
-        # Draw subtle grid
-        for x in range(0, WIDTH, self.grid_size):
-            for y in range(0, HEIGHT, self.grid_size):
-                alpha = int(self.grid_opacity * 0.5 * (1 - abs(x - WIDTH/2) / (WIDTH/2)))  # More subtle
-                pygame.draw.line(surface, (*WHITE, alpha), (x, 0), (x, HEIGHT), 1)
-                pygame.draw.line(surface, (*WHITE, alpha), (0, y), (WIDTH, y), 1)
-        # Draw animated center line
-        y = self.center_line_offset
-        while y < HEIGHT:
-            pygame.draw.line(surface, (*WHITE, 100), (WIDTH//2, y), (WIDTH//2, y + CENTER_LINE_DASH_LENGTH), 2)
-            y += CENTER_LINE_DASH_LENGTH + CENTER_LINE_GAP
+        # Removed center line drawing from here
         # Draw particles
         for particle in self.particles:
             particle.draw(surface)
@@ -456,11 +448,14 @@ class Background:
 background = Background()
 
 def draw_game():
-    # Clear the screen first
-    screen.fill(BLACK)
     # Update and draw background
     background.update()
     background.draw(screen)
+    # Draw animated center line only during gameplay
+    y = background.center_line_offset
+    while y < HEIGHT:
+        pygame.draw.line(screen, (*WHITE, 100), (WIDTH//2, y), (WIDTH//2, y + CENTER_LINE_DASH_LENGTH), 2)
+        y += CENTER_LINE_DASH_LENGTH + CENTER_LINE_GAP
     
     # Update and draw particles
     for particle in particles[:]:
@@ -473,16 +468,11 @@ def draw_game():
     opponent.draw()
     ball.draw()
     
-    # Draw scores with glow effect
+    # Draw scores as plain text only, positioned a little higher
     for score, x_pos, color in [(player.score, WIDTH // 4, BLUE), (opponent.score, 3 * WIDTH // 4, RED)]:
-        # Draw glow
-        glow_surface = pygame.Surface((100, 100), pygame.SRCALPHA)
-        pygame.draw.circle(glow_surface, (*color, 50), (50, 50), 40)
-        screen.blit(glow_surface, (x_pos - 50, 20 - 50))
-        
-        # Draw score
         score_text = render_text(str(score), score_font, color)
-        screen.blit(score_text, (x_pos, 20))
+        score_rect = score_text.get_rect(center=(x_pos, 70))  # Was 100, now 70
+        screen.blit(score_text, score_rect)
 
 def draw_menu():
     # Clear the screen first
