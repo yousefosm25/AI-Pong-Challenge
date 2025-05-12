@@ -17,41 +17,79 @@ A classic Pong game where the paddles are controlled by AI agents trained using 
 
 ## 🚀 Technologies Used
 
-- Python 3  
-- neat-python  
-- Pygame  
-- NumPy  
-- Matplotlib (optional, for graphing fitness over generations)
+- Python 3.8+
+- neat-python
+- Pygame
+- NumPy
 
-## 📁 How to Run
+## 📁 Project Structure
+
+```
+AI Pong Challenge/
+├── pong/
+│   ├── src/           # Source code
+│   ├── config.txt     # NEAT configuration
+│   ├── run.py         # Main entry point
+│   └── requirements.txt
+├── requirements.txt   # Project dependencies
+└── README.md
+```
+
+## 📥 Installation
 
 ### 1. Clone the repository
-```
+```bash
 git clone https://github.com/yousefosm25/AI-Pong-Challenge
-cd AI Pong Challenge
+cd AI-Pong-Challenge
 ```
-### 2. Install dependencies
-```pip install -r requirements.txt```
 
-### 3. Run the game
-```python main.py```
+### 2. Create and activate a virtual environment (recommended)
+```bash
+python -m venv enve
+source enve/bin/activate  # On Windows: enve\Scripts\activate
+```
 
-> Make sure `config-feedforward.txt` is in the same directory as `main.py`.
+### 3. Install dependencies
+```bash
+pip install -r requirements.txt
+```
 
-## 🧪 Features
+### 4. Run the game
+```bash
+cd pong
+python run.py
+```
 
-- Self-learning AI via NEAT  
-- Fitness-based evolution over generations  
-- Dynamic difficulty as the AI improves  
-- Real-time gameplay and training visualization  
-- Optional graphs to visualize the training progress
+## 🎯 Features
+
+- Self-learning AI via NEAT algorithm
+- Real-time visualization of AI training
+- Fitness-based evolution over generations
+- Dynamic difficulty adjustment
+- Configurable NEAT parameters via config.txt
+
+## 🎮 How to Play
+
+1. The game starts automatically with AI-controlled paddles
+2. Watch as the AI learns and improves over generations
+3. The fitness score increases as the AI gets better at playing
+4. Training progress is saved automatically
+
+## 📊 Training Progress
+
+The AI's learning progress can be monitored through:
+- Real-time gameplay visualization
+- Fitness score tracking
+- Generation statistics
 
 ## 📎 Links
 
-- GitHub: https://github.com/yousefosm25/AI-Pong-Challenge  
+- GitHub: https://github.com/yousefosm25/AI-Pong-Challenge
 - YouTube Demo: https://youtu.be/YOUR_VIDEO_ID
 
----
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📜 License
 
