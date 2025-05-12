@@ -7,6 +7,7 @@ from .ball import Ball
 from .background import Background
 from .button import Button
 from .particle import Particle
+from .ai_trainer import AITrainer
 
 class Game:
     def __init__(self):
@@ -36,6 +37,8 @@ class Game:
         
         self.menu_button = Button(WIDTH//2, HEIGHT//2 + 80, 200, 50, "Main Menu", self.menu_font, WHITE, HIGHLIGHT)
         
+        self.train_ai_button = Button(WIDTH//2, HEIGHT//2 + 190, 200, 50, "Train AI", self.menu_font, PURPLE, (200, 100, 255))
+        
         # Game state
         self.game_state = MENU
         self.game_mode = PVP
@@ -43,6 +46,8 @@ class Game:
         
         # Clock for FPS
         self.clock = pygame.time.Clock()
+        
+        self.ai_trainer = AITrainer(self)
 
     def add_particles(self, x, y, color, count=5):
         for _ in range(count):
@@ -94,6 +99,7 @@ class Game:
         self.start_button.draw(self.screen)
         self.controls_button.draw(self.screen)
         self.quit_button.draw(self.screen)
+        self.train_ai_button.draw(self.screen)
 
     def draw_mode_select(self):
         self.screen.fill(BLACK)
@@ -200,6 +206,9 @@ class Game:
                             self.quit_button.click()
                             pygame.quit()
                             sys.exit()
+                        elif self.train_ai_button.rect.collidepoint(mouse_pos):
+                            self.train_ai_button.click()
+                            self.ai_trainer.run_neat()
                     
                     elif self.game_state == MODE_SELECT:
                         if self.pvp_button.rect.collidepoint(mouse_pos):
@@ -234,6 +243,7 @@ class Game:
                 self.start_button.check_hover(mouse_pos)
                 self.controls_button.check_hover(mouse_pos)
                 self.quit_button.check_hover(mouse_pos)
+                self.train_ai_button.check_hover(mouse_pos)
                 self.draw_menu()
             
             elif self.game_state == MODE_SELECT:
